@@ -1,0 +1,21 @@
+/* src/assets/styles/global.css */
+/* 导入重置和设计令牌 */
+@import './reset.css';
+@import './tokens.css';
+
+/* 全局字体 */
+body {
+  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 全局容器 */
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-md);
+}

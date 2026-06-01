@@ -1,0 +1,50 @@
+/* src/assets/styles/reset.css */
+/* 基础重置 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* 去掉列表样式 */
+ul, ol {
+  list-style: none;
+}
+
+/* 去掉链接下划线 */
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* 按钮/输入框默认样式重置 */
+button, input, textarea {
+  font-family: inherit;
+  font-size: inherit;
+  border: none;
+  outline: none;
+}
+
+/* 按钮光标 */
+button {
+  cursor: pointer;
+}
+
+/* 图片自适应 */
+img {
+  max-width: 100%;
+  display: block;
+}
+
+/* 全局滚动条优化 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background-color: #dcdfe6;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-track {
+  background-color: #f5f7fa;
+}

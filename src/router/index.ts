@@ -5,7 +5,25 @@ const routes = [
   {
     path: '/',
     name: 'name',
-    component: ()=>import ('@/views/HomePage.vue')
+    component: ()=>import ('@/views/HomePage.vue'),
+  },
+  {
+    path:'/login',
+    name: 'login',
+    component: ()=>import ('@/views/LoginPage.vue'),
+     meta: { guest: true }, // 仅未登录可访问
+  },
+  {
+    path:'/register',
+    name: 'register',
+    component: ()=> import('@/views/LoginPage.vue'),
+     meta: { guest: true },
+  },
+  //404路由
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'not-found',
+    component: () => import('@/views/NotFoundPage.vue'),
   }
 ]
 
