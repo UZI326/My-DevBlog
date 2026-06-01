@@ -1,0 +1,28 @@
+{
+  "name": "devblog",
+  "version":"1.0.0",
+  "type":"module",
+  "scripts":{
+    "dev":"vite",
+    "build":"vue-tsc && vite bulid",
+    "preview":"vite preview",
+    "lint":"eslint src/",
+    "type-check":"vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "vue": "3.5.13",
+    "vue-router":"4.4.5",
+    "pinia":"2.2.6"
+  },
+  "devDependencies": {
+    "vite":"7.1.5",
+    "@vitejs/plugin-vue":"^6.0.0",
+    "vue-tsc":"2.1.10",
+    "typescript":"5.6.3",
+    "eslint":"9.14.0",
+    "@typescript-eslint/parser":"8.12.2",
+    "eslint-plugin-vue":"9.30.0",
+    "prettier":"3.3.3",
+    "eslint-config-prettier":"9.1.0"
+  }
+}
