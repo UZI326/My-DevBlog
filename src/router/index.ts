@@ -1,6 +1,6 @@
 //路由配置
 import {createRouter, createWebHistory} from 'vue-router'
-
+import { useAuthStore } from '@/stores/auth.ts'
 const routes = [
   {
     path: '/',
@@ -16,10 +16,10 @@ const routes = [
   {
     path:'/register',
     name: 'register',
-    component: ()=> import('@/views/LoginPage.vue'),
+    component: ()=> import('@/views/RegisterPage.vue'),
      meta: { guest: true },
   },
-  //404路由
+  //404路由 兜底路由
   {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
@@ -29,7 +29,27 @@ const routes = [
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-  routes
+  routes,
 })
-
+// 路由守卫：惰性获取Auth Store（避免Pinia未挂载）
+// 全局守卫（同步执行，无需 async）
+router.beforeEach((to, _from, next) => {
+  const auth = useAuthStore() // ✅ 直接调用，无时序风险
+  // 1. 需登录但未登录 → 跳登录页（带来源路径）
+  if (to.meta.requiresAuth && !auth.isLoggedIn) {
+    return next({
+      name: 'login',
+      query: { returnUrl: to.fullPath } // 保留来源路径
+    })
+  }
+  // 2. 游客页但已登录 → 跳首页
+  if (to.meta.guest && auth.isLoggedIn) {
+    return next({ name: 'name' })
+  }
+  // 3. 角色权限检查（生产级增强）
+  if (to.meta.requiredRoles && !auth.hasRoles(to.meta.requiredRoles)) {
+    return next({ name: 'forbidden' }) // 跳转 403 页面
+  }
+  next()
+})
 export default router

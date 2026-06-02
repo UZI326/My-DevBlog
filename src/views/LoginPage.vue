@@ -56,12 +56,11 @@
 
       <!-- 注册跳转 -->
       <div class="login-footer">
-        还没有账号？<a href="/register" class="register-link">立即注册</a>
+        还没有账号？<router-link to="/register" class="register-link">立即注册</router-link>
       </div>
     </div>
   </div>
 </template>
-
 <script setup lang="ts">
 import { ref, reactive } from 'vue';
 import { api } from '@/api/request';
@@ -76,64 +75,63 @@ const form = reactive<LoginParams>({
 
 // 状态管理
 const showPwd = ref(false); // 密码显示/隐藏
-const isLoading = ref(false); // 登录按钮 loading
+const isLoading = ref(false); // 登录按钮 loading 加载状态指示器 
 const errors = reactive<Record<string, string>>({
   username: '',
   password: '',
 });
-
-// 用户名校验
-const validateUsername = () => {
-  if (!form.username.trim()) {
-    errors.username = '用户名不能为空';
-  } else if (form.username.length < 3 || form.username.length > 10) {
-    errors.username = '用户名需为 3-10 个字符';
-  } else {
-    errors.username = '';
+//用户名校验 
+const validateUsername = ()=>{
+  if(!form.username.trim()){
+    errors.username = '用户名不能为空'
+  }else if(form.username.length<3||form.username.length>10){
+    errors.username = '用户名需要为3-10个字符'
+  }else{
+    errors.username = ''
   }
-};
-
-// 密码校验
-const validatePassword = () => {
-  if (!form.password.trim()) {
-    errors.password = '密码不能为空';
-  } else if (form.password.length < 6 || form.password.length > 12) {
-    errors.password = '密码需为 6-12 个字符';
-  } else {
-    errors.password = '';
-  }
-};
-
+}
+//密码校验
+const validatePassword = ()=>{
+   if(!form.password.trim()){
+    errors.password = '密码不能为空'
+   }else if(form.password.length<6 || form.password.length >12){
+     errors.password = '密码需要为6-12个字符'
+   }else{
+    errors.password = ''
+   }
+}
 // 登录提交
 const handleLogin = async () => {
   // 先执行校验
-  validateUsername();
-  validatePassword();
+  validateUsername()
+  validatePassword()
   // 有错误则终止
-  if (errors.username || errors.password) return;
-
+  if(errors.username || errors.password) return
+  
   try {
-    isLoading.value = true;
+    isLoading.value = true
     // 模拟延迟（后端未就绪时用）
-    await new Promise(resolve => setTimeout(resolve, 800));
+    await new Promise(resolve => setTimeout(resolve,800))
     
     // 调用登录接口（类型自动推导）
-    const result = await api.post<LoginResult, LoginParams>(
+    const result = await api.post<LoginParams,LoginResult>(
       '/auth/login',
       form
-    );
+    )
     
-    // 登录成功：存储 token 和用户信息
-    storage.set('token', result.token);
-    storage.set('userInfo', {
-      id: result.id,
-      username: result.username,
-      user_pic: result.user_pic,
-    });
     
+    // 登录成功：存储 token 和用户信息   核心目的：持久化数据（Persist Data）
+   storage.set('token',result.token)
+   storage.set('userInfo',{
+    id: result.id,
+    username: result.username,
+    user_pic: result.user_pic
+   })
+
     // 跳转到首页
-    alert('登录成功！');
-    window.location.href = '/';
+    alert('登录成功!')
+    window.location.href = '/'
+    
   } catch (error) {
     // 捕获错误并提示
     if (error instanceof Error) {
