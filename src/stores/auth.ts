@@ -12,7 +12,12 @@ export const useAuthStore = defineStore('auth',()=>{
   const router = useRouter()
 
   // 判断是否已登录（token存在 + user存在）
-  const isLoggedIn = computed(() => !!token.value&&!!user.value)
+  const isLoggedIn = computed(() => !!token.value && !!user.value)
+  // 角色权限检查（当前用户无角色字段，预留接口，只要已登录即通过）
+  function hasRoles(roles: string[]): boolean {
+    if (!roles.length) return true
+    return isLoggedIn.value
+  }
   // 获取用户名（兜底空字符串）
   const username = computed(() => user.value?.username||'')
   //登录
@@ -72,13 +77,22 @@ export const useAuthStore = defineStore('auth',()=>{
       //1.从localStorage读取token
       const savedToken = localStorage.getItem('devblog_token')
       if(!savedToken)return
-      //2.恢复token到state
+      //2.恢复token到state（同步）
       token.value = savedToken
-      //3.调用API获取最新用户信息
-      const res = await getUserInfoApi()
-      if(res.status!==0) throw new Error(res.message||'获取用户信息失败')
-       //4.更新user状态
-      user.value = res.data 
+      //3.同步恢复user（login时已存入localStorage），保证路由守卫立即可用
+      const savedUser = localStorage.getItem('devblog_user')
+      if(savedUser) {
+        user.value = JSON.parse(savedUser)
+      }
+      //4.异步刷新最新用户信息（失败不影响已恢复的会话）
+      try {
+        const res = await getUserInfoApi()
+        if(res.status === 0) {
+          user.value = res.data
+        }
+      } catch {
+        console.log('刷新用户信息失败，使用缓存数据')
+      }
     }catch(err){
       console.log('恢复会话失败',err)
       //恢复失败则清空状态
@@ -103,7 +117,7 @@ export const useAuthStore = defineStore('auth',()=>{
      }
    }
    return {
-    user, token, isLoggedIn, username,
+    user, token, isLoggedIn, username, hasRoles,
     login, register, logout, restoreSession, updateProfile,
   }
 })

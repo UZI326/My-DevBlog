@@ -17,7 +17,24 @@ const routes = [
     path:'/register',
     name: 'register',
     component: ()=> import('@/views/RegisterPage.vue'),
-     meta: { guest: true },
+     meta: { guest: true }, //标记为游客专属页
+  },
+  {
+    path: '/article/:id',
+    name: 'article-detail',
+    component: () => import('@/views/ArticleDetailPage.vue'),
+    props: true, // 将路由参数作为组件 props 传递
+  },
+  {
+    path: '/admin',
+    name: 'admin',
+    component: () => import('@/views/AdminPage.vue'),
+    meta: { requiresAuth: true }, // 需登录才能访问
+  },
+  {
+    path: '/403',
+    name: 'forbidden',
+    component: () => import('@/views/ForbiddenPage.vue'),
   },
   //404路由 兜底路由
   {

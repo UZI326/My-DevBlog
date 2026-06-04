@@ -9,7 +9,7 @@ export async function loginApi(params:LoginParams):Promise<ApiResponse<{token: s
   return{
     status:0,
     message:'success',
-    data: { token: 'mock-jwt-token-' + Date.now(), id: 1, username: params.username }
+    data: { token: 'mock-jwt-token-' + new Date(), id: 1, username: params.username }
   }
     // Week 2 替换为：const { data } = await request.post('/api/login', params); return data
 }
@@ -19,7 +19,7 @@ export async function registerApi(params:RegisterParams):Promise<ApiResponse<Reg
   return {
     status:0,
     message:'注册成功',
-    data:{id:Date.new(),username:params.username}
+    data:{id:new Date(),username:params.username}
   }
 }
 //获取当前用户信息

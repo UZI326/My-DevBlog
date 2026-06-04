@@ -3,9 +3,12 @@ import {createPinia} from 'pinia'
 import App from'./App.vue'
 import router from './router'
 import { useAuthStore } from '@/stores/auth'
+import {setupMarked} from '@/utils/markdown'
 // 导入全局样式
 import '@/assets/styles/global.css'
 
+//全局配置 marked 解析器（只需执行一次）
+setupMarked()
 const pinia = createPinia()
 const app = createApp(App)
 

@@ -56,7 +56,7 @@
 
       <!-- 注册跳转 -->
       <div class="login-footer">
-        还没有账号？<router-link to="/register" class="register-link">立即注册</router-link>
+        还没有账号？<a href="/register" class="register-link">立即注册</a>
       </div>
     </div>
   </div>
@@ -125,7 +125,7 @@ const handleLogin = async () => {
    storage.set('userInfo',{
     id: result.id,
     username: result.username,
-    user_pic: result.user_pic
+    user_pic: result.user_pic,
    })
 
     // 跳转到首页
