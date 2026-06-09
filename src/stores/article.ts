@@ -1,76 +1,103 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 import { getArticlesApi, getArticleDetailApi, getCategoriesApi } from '@/api/article'
-import type { ArticleListItem, ArticleDetail, ArticleFilter, Category, FilterOption } from '@/types/article'
+import type { ArticleListItem, ArticleDetail, ArticleFilter, Category } from '@/types/article'
 
-export const useArticleStore = defineStore('article',()=>{
-  const articles = ref<ArticleListItem[]>([])   //([])这是传给 ref 的初始值
+export const useArticleStore = defineStore('article', () => {
+  // 状态
+  const articles = ref<ArticleListItem[]>([])
+  const articleDetail = ref<ArticleDetail | null>(null)
   const categories = ref<Category[]>([])
   const total = ref(0)
   const loading = ref(false)
-  //当前筛选
-  const currentFilter = ref<FilterOption>('all')
-  const currentPage = ref(1)
-  const pageSize = ref(2)
-  //计算   派生数据，依赖`currentFilter`自动更新，无需手动赋值。
-  const activeCategory = computed(()=>{
-    // 返回当前选中的分类slug（all 则返回空）
-    return currentFilter.value === 'all' ? '': currentFilter.value
-  })
-  //添加计算属性 计算总页数
-  const totalPages = computed(()=>{
-    return Math.ceil(total.value / pageSize.value)
-  })
-  // 获取文章列表（根据筛选条件） 方法实现
-  async function fetchArticles(filterOverride?: Partial<ArticleFilter>){
+   // === ✅ 新增：UI 交互所需的状态 ===
+  const currentFilter = ref<string>('all')
+  const currentPage = ref<number>(1)
+  const pageSize = ref<number>(6)
+   // === ✅ 新增：计算属性 (自动计算总页数) ===
+  const totalPages = computed(()=>Math.ceil(total.value/pageSize.value))
+
+  /**
+   * 获取文章列表
+   * @param params 筛选参数
+   */
+  const fetchArticles = async (params?: ArticleFilter) => {
     loading.value = true
-    try{
-      //组装筛选参数
-      const params: ArticleFilter = {
-        pagenum: currentPage.value,
-        pagesize: pageSize.value,
-        category_slug: activeCategory.value,
-        ...filterOverride,
+    try {
+      const requestParams: ArticleFilter = {
+        pagenum: params?.pagenum ?? currentPage.value,
+        pagesize: params?.pagesize ?? pageSize.value,
+        ...params,
       }
-      //调用API
-      const res = await getArticlesApi(params)
-      if(res.code === 200){
-        articles.value = res.data.list
-        total.value = res.data.total
+      if (currentFilter.value !== 'all') {
+        requestParams.category_slug = currentFilter.value
       }
-    }catch(error){
-      console.log('获取位置列表失败',error)
-    }finally{
+      const data = await getArticlesApi(requestParams)
+      articles.value = data.items || []
+      total.value = data.total || 0
+  
+    } catch (error: any) {
+      alert(error.message || '获取文章列表失败')
+    } finally {
       loading.value = false
     }
   }
-  // 获取全部分类
-  async function fetchCategories(){
-    try{
-      const res = await getCategoriesApi()
-      if(res.code === 200){
-        categories.value = res.data
-      }
-    }catch(error){
-      console.log('获取文章分类列表失败:',error)
+
+  /**
+   * 获取文章详情
+   * @param id 文章ID
+   */
+  const fetchArticleDetail = async (id: number) => {
+    loading.value = true
+    try {
+      const data = await getArticleDetailApi(id)
+      articleDetail.value = data
+    } catch (error: any) {
+      alert(error.message || '获取文章详情失败')
+      articleDetail.value = null
+    } finally {
+      loading.value = false
     }
   }
-  //切换分类筛选
-  function setFilter(slug:FilterOption){
-    currentFilter.value = slug
-    currentPage.value = 1  //切换分类重置页码
-    fetchArticles()
+
+  /**
+   * 获取分类列表
+   */
+  const fetchCategories = async () => {
+    try {
+      const data = await getCategoriesApi()
+      categories.value = data
+    } catch (error: any) {
+      alert(error.message || '获取分类列表失败')
+    }
   }
-  //切换页码
-  function setPage(page:number){
-    if(page<1||page>totalPages.value) return 
+
+  const setFilter = async (filter: string) => {
+    currentFilter.value = filter
+    currentPage.value = 1
+    await fetchArticles({ pagenum: 1, pagesize: pageSize.value })
+  }
+
+  const setPage = async (page: number) => {
+    if (page < 1 || page > totalPages.value) return
     currentPage.value = page
-    fetchArticles()
-  } 
-  return{
-    articles, categories, total, loading,
-    currentFilter, currentPage, pageSize,
-    activeCategory, totalPages,
-    fetchArticles, fetchCategories, setFilter, setPage,
+    await fetchArticles({ pagenum: page, pagesize: pageSize.value })
+  }
+
+  return {
+    articles,
+    articleDetail,
+    categories,
+    total,
+    loading,
+    currentFilter,
+    currentPage,
+    pageSize,
+    totalPages,
+    setFilter,
+    setPage,
+    fetchArticles,
+    fetchArticleDetail,
+    fetchCategories
   }
 })

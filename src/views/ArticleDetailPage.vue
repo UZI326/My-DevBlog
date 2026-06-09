@@ -98,8 +98,8 @@ const loadArticleDetail = async () => {
   loading.value = true
   try {
     const res = await getArticleDetailApi(articleId)
-    if (res.code === 200) {
-      article.value = res.data
+    if (res) {
+      article.value = res
     } else {
       article.value = null
     }

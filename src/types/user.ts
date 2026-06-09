@@ -6,6 +6,7 @@ export interface User{
   nickname?: string
   email?: string
   user_pic?: string|null
+  role?: string
 }
 
 //登录请求

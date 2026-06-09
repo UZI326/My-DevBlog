@@ -3,14 +3,19 @@
 //带类型校验和错误处理，避免 JSON 解析 / 序列化失败导致的报错：
 export const storage = {
   // 读取本地存储，失败返回 null
-  get<T> (key:string):T | null {
-    try{
-      const value = localStorage.getItem(key)  // 原生只能返回字符串或 null
-      if(!value) return null      // 空值直接返回 null（安全处理）
-      return JSON.parse(value) as T  // 关键：解析后断言为泛型 T
-    }catch(error){
+  get<T>(key: string): T | null {
+    try {
+      const value = localStorage.getItem(key)
+      if (!value) return null
+      try {
+        return JSON.parse(value) as T
+      } catch {
+        // 不是合法 JSON（如 JWT Token 纯字符串），直接返回原始值
+        return value as unknown as T
+      }
+    } catch (error) {
       console.error(`读取 localStorage 失败（key: ${key}）:`, error)
-      return null  // 失败时返回 null 而非抛错
+      return null
     }
   },
   //  写入本地存储，失败不抛错（仅控制台提示）

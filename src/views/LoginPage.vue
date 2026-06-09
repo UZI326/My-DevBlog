@@ -63,10 +63,10 @@
 </template>
 <script setup lang="ts">
 import { ref, reactive } from 'vue';
-import { api } from '@/api/request';
-import type { LoginParams, LoginResult } from '@/types/api';
-import { storage } from '@/utils/storage';
+import { useAuthStore } from '@/stores/auth'
+import type { LoginParams } from '@/types/api';
 
+const authStore = useAuthStore()
 // 表单数据
 const form = reactive<LoginParams>({
   username: '',
@@ -107,36 +107,14 @@ const handleLogin = async () => {
   validatePassword()
   // 有错误则终止
   if(errors.username || errors.password) return
-  
+   isLoading.value = true
   try {
-    isLoading.value = true
-    // 模拟延迟（后端未就绪时用）
-    await new Promise(resolve => setTimeout(resolve,800))
+   await authStore.login(form)
+   // 登录成功跳转由 store 内部处理
     
-    // 调用登录接口（类型自动推导）
-    const result = await api.post<LoginParams,LoginResult>(
-      '/auth/login',
-      form
-    )
-    
-    
-    // 登录成功：存储 token 和用户信息   核心目的：持久化数据（Persist Data）
-   storage.set('token',result.token)
-   storage.set('userInfo',{
-    id: result.id,
-    username: result.username,
-    user_pic: result.user_pic,
-   })
-
-    // 跳转到首页
-    alert('登录成功!')
-    window.location.href = '/'
-    
-  } catch (error) {
+  } catch (error:any) {
     // 捕获错误并提示
-    if (error instanceof Error) {
-      alert(`登录失败：${error.message}`);
-    }
+   alert(error.message||'登录失败,请重试')
   } finally {
     isLoading.value = false;
   }

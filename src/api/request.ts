@@ -1,101 +1,102 @@
-// src/api/request.ts
-import axios, { AxiosRequestConfig, AxiosError } from 'axios'
+import axios, { AxiosRequestConfig, AxiosError, AxiosResponse } from 'axios'
 import { storage } from '@/utils/storage'
 import type { ApiResponse } from '@/types/api'
 
-// 1. 创建 Axios 实例（保持原有配置）
+// 1. 创建 Axios 实例（保留你的原有配置，适配环境变量）
 const instance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
+  baseURL: import.meta.env.VITE_API_BASE_URL || '',
   timeout: 10000,
   withCredentials: true,
   headers: { 'Content-Type': 'application/json;charset=utf-8' }
 })
 
-// 2. 请求拦截器：仅处理协议层逻辑（保持原有设计）
+// 2. 请求拦截器：携带 Token（键名统一为 devblog_token，对齐文档/Store）
 instance.interceptors.request.use(
   (config) => {
-    const token = storage.get<string>('token')
+    // 统一使用文档规定的 token 键名
+    const token = storage.get<string>('devblog_token')
     if (token && config.headers) {
+      // JWT 规范：Bearer 令牌
       config.headers.Authorization = `Bearer ${token}`
     }
     return config
   },
-  (error: AxiosError) => { // ✅ FIX: 修复参数类型错误
+  (error: AxiosError) => {
     return Promise.reject(error)
   }
 )
 
-// 3. 响应拦截器：仅处理网络层错误（关键修改！）
+// 3. 响应拦截器：核心修改！统一解包 + 错误处理（严格对齐后端规范）
 instance.interceptors.response.use(
-  (response) => {
-    // ✅ FIX: 1. 移除业务错误处理逻辑
-    // ✅ FIX: 2. 直接返回原始响应（不解包！）
-    return response // 保留完整响应结构
+  (response: AxiosResponse<ApiResponse>) => {
+    const res = response.data
+    // 后端规范：code=0 代表成功，直接返回业务数据 data
+    if (res.code === 0) {
+      return res.data
+    }
+    // 业务错误：直接抛出错误信息
+    return Promise.reject(new Error(res.message || '请求失败'))
   },
   (error: AxiosError) => {
-    // ✅ FIX: 3. 仅处理网络层错误（不碰业务错误码！）
-    let errorMsg = '网络异常, 请稍后重试'
-    
-    // 修复错误判断逻辑（原代码有逻辑错误）
-    if (error.code === 'ECONNABORTED') { // ✅ FIX: 检查 error.code 而非 errorMsg
-      errorMsg = '请求超时, 请稍后重试'
-    } else if (error.response) {
-      errorMsg = `服务异常（${error.response.status}）`
+    // 网络层 / HTTP 状态码错误处理
+    let errorMsg = '网络异常，请稍后重试'
+
+    // 请求超时
+    if (error.code === 'ECONNABORTED') {
+      errorMsg = '请求超时，请稍后重试'
     }
-    
-    console.error('Axios 网络错误:', errorMsg)
-    return Promise.reject({ 
-      ...error, 
-      message: errorMsg // 保留原始错误信息
-    })
+    // 后端返回 HTTP 状态码
+    else if (error.response) {
+      const status = error.response.status
+      switch (status) {
+        case 401:
+          errorMsg = '登录已失效，请重新登录'
+          // 清空本地存储（对齐文档键名）
+          storage.remove('devblog_token')
+          storage.remove('devblog_user')
+          // 自动跳转到登录页
+          window.location.href = '/login'
+          break
+        case 404:
+          errorMsg = '请求资源不存在'
+          break
+        case 500:
+          errorMsg = '服务器内部错误'
+          break
+        default:
+          errorMsg = (error.response.data as ApiResponse)?.message || `请求错误(${status})`
+      }
+    }
+
+    return Promise.reject(new Error(errorMsg))
   }
 )
 
-// 4. 类型安全的请求封装（核心修改：处理业务错误）
+// 4. 简化请求封装：响应拦截已处理所有逻辑，此处仅做泛型转发
 type RequestMethod = 'get' | 'post' | 'put' | 'delete'
-
+/**
+ * 内部请求核心
+ * @returns Promise<T> 注意：这里直接返回 T，因为拦截器已经解包了
+ */
 const request = async <T = unknown, P = unknown>(
   method: RequestMethod,
   url: string,
   data?: P,
   params?: P,
   config?: AxiosRequestConfig
-) => {
-  try {
-    const response = await instance.request<ApiResponse<T>>({
-      url,
-      method,
-      data,
-      params,
-      ...config
-    })
-
-    // ✅ FIX: 5. 在此处集中处理业务错误（关键！）
-    const res = response.data
-    if (res.code !== 0) {
-      // 401 特殊处理（但不再跳转，交给上层决定）
-      if (res.code === 401) {
-        storage.remove('token')
-        storage.remove('userInfo')
-        // 抛出带状态的错误，由调用层决定跳转逻辑
-        throw new Error('AUTH_EXPIRED')
-      }
-      throw new Error(res.message || '请求失败')
-    }
-    
-    return res.data // 仅成功时返回业务数据
-  } catch (error: any) {
-    // ✅ FIX: 6. 统一抛出可识别的错误类型
-    if (error.message === 'AUTH_EXPIRED') {
-      throw error // 保留特殊标识
-    }
-    throw error.isAxiosError 
-      ? error.response?.data?.message || '网络请求失败' 
-      : error.message
-  }
+):Promise<T> => {  // <--- 显式声明返回值为 Promise<T>
+  // 所有业务/错误处理已在拦截器完成，直接返回结果
+  const result = await instance.request<T>({   // 这里用 any 避免中间层类型检查报错
+    url,
+    method,
+    data,
+    params,
+    ...config
+  })
+  return result as T  // 断言为 T，因为拦截器已经处理过了
 }
 
-// 5. 导出简化的请求方法
+// 5. 导出 API 方法（保留你的原有调用方式，完全兼容）
 export const api = {
   get: <T, P = unknown>(url: string, params?: P, config?: AxiosRequestConfig) =>
     request<T, P>('get', url, undefined, params, config),
@@ -107,4 +108,4 @@ export const api = {
     request<T, P>('delete', url, undefined, params, config),
 }
 
-export default instance
+// export default instance
