@@ -10,6 +10,13 @@ export default defineConfig({
     }
   },
   server: {
-    port: 3000
+    port: 3000,
+    proxy: {
+      '/api': {
+        target:'http://localhost:3001',
+        changeOrigin: true  // 开启跨域
+        // rewrite: (path) => path.replace(/^\/api/, '') // 如需去掉/api前缀则打开（后端无/api时用）
+      }
+    }
   }
 })

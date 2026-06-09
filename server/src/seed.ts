@@ -15,8 +15,8 @@ db.exec("DELETE FROM sqlite_sequence")
 
 // 2. 插入管理员用户（密码 admin123）
 const hashedPwd = bcrypt.hashSync('admin123', 10)
-db.prepare('INSERT INTO users (username, password, nickname) VALUES (?, ?, ?)')
-  .run('admin', hashedPwd, 'DevBlog管理员')
+db.prepare('INSERT INTO users (username, password, nickname, role) VALUES (?, ?, ?, ?)')
+  .run('admin', hashedPwd, 'DevBlog管理员', 'admin')
 
 // 3. 插入3个分类
 const insertCategory = db.prepare('INSERT INTO categories (name, slug) VALUES (?, ?)')

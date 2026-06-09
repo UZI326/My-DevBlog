@@ -2,24 +2,10 @@ import express from 'express'
 import bcrypt  from 'bcrypt'
 import db from '../db'
 import { signToken } from '../middleware/auth'
+import { sendResponse } from '../utils/response.js'
 
 const router = express.Router()
 
-//统一方式返回响应
-interface ApiResponse<T> {
-  code: number
-  message: string
-  data: T|null
-}
-
-function sendResponse<T>(
-  res: express.Response,
-  code: number,
-  message: string,
-  data: T|null = null
-): void {
-  res.json({ code, message, data } as ApiResponse<T>)
-}
 //定义用户类型(解决类型推断问题)
 interface User {
   id: number
@@ -28,6 +14,7 @@ interface User {
   nickname?: string
   email?: string
   user_pic?: string
+   role?: string 
 }
 
 //1. 登录接口POST /api/login
@@ -48,7 +35,7 @@ router.post('/login',(req,res)=>{
     return sendResponse(res,400,'密码错误')
   }
   //生成token
-  const token = signToken({id: user.id, username: user.username})
+  const token = signToken({ id: user.id, username: user.username, role: user.role || 'user' })
   //返回token和用户信息 不含密码
   sendResponse(res,0,'登录成功',{
     token,
@@ -56,7 +43,8 @@ router.post('/login',(req,res)=>{
     username: user.username,
     nickname: user.nickname,
     email: user.email,
-    user_pic: user.user_pic
+    user_pic: user.user_pic,
+    role: user.role || 'user',  // 新增这行
   })
 }) 
 //2. 注册接口POST /api/register

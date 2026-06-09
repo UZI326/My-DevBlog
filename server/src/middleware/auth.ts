@@ -9,6 +9,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'devblog_jwt_secret_key_2026'
 export interface JwtPayload {
   id: number
   username: string
+  role:string
 }
 
 // 扩展 Express Request 类型

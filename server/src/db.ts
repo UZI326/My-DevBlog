@@ -25,6 +25,7 @@ export function initDB():void{
       email TEXT,
       user_pic TEXT,
       nickname TEXT,
+      role TEXT DEFAULT 'user',
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 

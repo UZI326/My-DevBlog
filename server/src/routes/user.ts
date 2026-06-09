@@ -1,18 +1,9 @@
 import express from 'express'
 import db from '../db'
 import { authMiddleware } from '../middleware/auth'
+import { sendResponse } from '../utils/response.js'
 
 const router = express.Router()
-
-interface ApiResponse<T> {
-  code: number
-  message: string
-  data: T | null
-}
-
-function sendResponse<T>(res: express.Response, code: number, message: string, data: T | null = null): void {
-  res.json({ code, message, data } as ApiResponse<T>)
-}
 
 // GET /api/user/info — 获取当前登录用户信息
 router.get('/info', authMiddleware, (req, res) => {
