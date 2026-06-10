@@ -55,5 +55,32 @@ export interface ArticleFilter {
   pagesize: number       // 每页条数（必选）
 }
 
+
 // 6. 筛选值类型（UI组件用）
 export type FilterOption = 'all' | string // all=全部，string=分类slug
+
+// 7.文章表单数据（用于创建/编辑）
+export interface ArticleFormData {
+  title: string
+  content: string
+  summary: string
+  cover_url: string
+  category_id: number | null
+  tag_ids: number[]
+  is_published: number
+}
+
+// 8.管理端文章列表项
+export interface AdminArticleItem {
+  id: number
+  title: string
+  summary: string | null
+  cover_url: string | null
+  author_name: string
+  category_name: string
+  is_published: boolean
+  view_count: number
+  like_count: number
+  created_at: string
+  updated_at: string
+}
