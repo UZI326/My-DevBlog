@@ -32,13 +32,14 @@
 
         <!-- 封面图 -->
         <div class="article-cover" v-if="article.cover_url">
-          <img :src="article.cover_url" :alt="article.title" />
+          <img :src="getFullImageUrl(article.cover_url)" :alt="article.title" />
         </div>
 
-        <!-- Markdown正文（v-html渲染） -->
+        <!-- Markdown正文（v-html渲染，key 确保文章切换时全量重建DOM） -->
         <div
           class="article-body"
           v-html="renderedContent"
+          :key="article?.id"
         ></div>
 
         <hr class="divider" />
@@ -63,6 +64,7 @@ import { marked } from 'marked'
 import 'highlight.js/styles/github-dark.css'
 import { getArticleDetailApi } from '@/api/article'
 import type { ArticleDetail } from '@/types/article'
+import { getFullImageUrl } from '@/utils/url'
 
 
 const router = useRouter()
@@ -81,11 +83,11 @@ const formatDate = (dateStr: string) => {
   return date.toLocaleDateString('zh-CN')
 }
 
-// 渲染Markdown内容
-//如果部分文章content为null/undefined，继续优化 computed：
-const renderedContent   = computed(()=>{
+// 渲染 Markdown 内容（marked@18 同步调用，无 { async: true } 始终返回 string）
+const renderedContent = computed(() => {
   const content = article.value?.content ?? ''
-  return marked.parse(content)
+  if (!content) return ''
+  return marked.parse(content) as string
 })
 
 // 返回首页
@@ -189,29 +191,29 @@ onMounted(() => {
   margin: 20px 0;
 }
 
-/* Markdown 样式适配 */
-.article-body h2 {
+/* Markdown 样式适配 —— :deep() 穿透 v-html */
+.article-body :deep(h2) {
   font-size: 24px;
   font-weight: 600;
   margin: 24px 0 12px;
 }
 
-.article-body h3 {
+.article-body :deep(h3) {
   font-size: 20px;
   font-weight: 600;
   margin: 20px 0 10px;
 }
 
-.article-body p {
+.article-body :deep(p) {
   margin: 12px 0;
 }
 
-.article-body ul {
+.article-body :deep(ul) {
   margin: 12px 0;
   padding-left: 20px;
 }
 
-.article-body pre {
+.article-body :deep(pre) {
   background: #1e1e1e;
   color: white;
   padding: 16px;
@@ -220,8 +222,13 @@ onMounted(() => {
   margin: 12px 0;
 }
 
-.article-body code {
+.article-body :deep(code) {
   font-family: 'Consolas', 'Monaco', monospace;
+}
+
+.article-body :deep(img) {
+  max-width: 100%;
+  border-radius: 4px;
 }
 
 .article-actions {

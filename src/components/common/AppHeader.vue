@@ -14,6 +14,11 @@ function handleLogout() {
   dropdownOpen.value = false
   router.push('/login')
 }
+//下拉菜单新增一个跳转写文章的方法
+function goWrite(){
+  dropdownOpen.value = false
+  router.push('/admin/edit')
+}
 </script>
 
 <template>
@@ -49,7 +54,7 @@ function handleLogout() {
           <span class="user-name">👤 {{ authStore.username }} ▾</span>
           <!-- 下拉菜单 -->
           <div v-show="dropdownOpen" class="dropdown-menu">
-            <div class="dropdown-item" @click="dropdownOpen = false">写文章</div>
+            <div class="dropdown-item" @click="goWrite">写文章</div>
             <div class="dropdown-item" @click="dropdownOpen = false">个人中心</div>
             <div class="dropdown-divider"></div>
             <div class="dropdown-item danger" @click="handleLogout">退出登录</div>

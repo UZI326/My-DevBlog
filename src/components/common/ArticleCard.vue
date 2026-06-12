@@ -3,7 +3,7 @@
   <div class="article-card" @click="goToDetail">
     <!-- 封面图 -->
     <div class="card-cover" v-if="article.cover_url">
-      <img :src="article.cover_url" :alt="article.title" />
+      <img :src="getFullImageUrl(article.cover_url)" alt="cover" />
     </div>
     <div class="card-cover placeholder" v-else></div>
 
@@ -42,6 +42,7 @@
 <script setup lang="ts">
   import {useRouter} from 'vue-router'
   import type {ArticleListItem} from '@/types/article'
+  import { getFullImageUrl } from '@/utils/url'
   // 定义props，接收文章列表项数据
   interface Props {
     article: ArticleListItem

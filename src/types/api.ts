@@ -42,3 +42,7 @@ export interface RegisterResult{
   username: string
   user_pic:null  //初始无头像
 }
+//8.图片上传响应
+export interface UploadResult{
+  url:string 
+}
