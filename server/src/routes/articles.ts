@@ -1,11 +1,9 @@
 import express from 'express'
 import db from '../db.js'
+import { sendResponse } from '../utils/response.js'
 
 const router = express.Router()
 
-function sendResponse<T>(res: express.Response, code: number, message: string, data: T = null as unknown as T) {
-  res.json({ code, message, data })
-}
 // 文章列表项的类型
 interface ArticleItem {
   id: number;
@@ -60,7 +58,7 @@ interface ArticleDetail {
 // 文章列表（分页+分类筛选）
 router.get('/', (req, res) => {
   const pagenum = parseInt(req.query.pagenum as string) || 1
-  const pagesize = parseInt(req.query.pagesize as string) || 6
+  const pagesize = Math.min(parseInt(req.query.pagesize as string) || 6, 100)
   const category_slug = req.query.category_slug as string
 
   const offset = (pagenum - 1) * pagesize

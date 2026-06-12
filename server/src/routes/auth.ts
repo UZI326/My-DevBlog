@@ -1,7 +1,7 @@
 import express from 'express'
 import bcrypt  from 'bcrypt'
-import db from '../db'
-import { signToken } from '../middleware/auth'
+import db from '../db.js'
+import { signToken } from '../middleware/auth.js'
 import { sendResponse } from '../utils/response.js'
 
 const router = express.Router()
@@ -14,7 +14,7 @@ interface User {
   nickname?: string
   email?: string
   user_pic?: string
-   role?: string 
+  role?: string 
 }
 
 //1. 登录接口POST /api/login

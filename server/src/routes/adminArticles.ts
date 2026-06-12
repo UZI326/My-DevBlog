@@ -68,7 +68,7 @@ router.post('/', authMiddleware, adminMiddleware, (req, res) => {
 
 // 3. 更新文章
 router.put('/:id', authMiddleware, adminMiddleware, (req, res) => {
-  const articleId = parseInt(req.params.id)
+  const articleId = parseInt(req.params.id as string)
   if (isNaN(articleId)) return sendResponse(res, 400, '文章ID不合法')
 
   const { title, content, summary, cover_url, category_id, tag_ids, is_published } = req.body
@@ -115,7 +115,7 @@ router.put('/:id', authMiddleware, adminMiddleware, (req, res) => {
 
 // 4. 删除文章
 router.delete('/:id', authMiddleware, adminMiddleware, (req, res) => {
-  const articleId = parseInt(req.params.id)
+  const articleId = parseInt(req.params.id as string)
   if (isNaN(articleId)) return sendResponse(res, 400, '文章ID不合法')
 
   try {

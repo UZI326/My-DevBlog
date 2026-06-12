@@ -10,7 +10,7 @@ export function sendResponse<T = unknown>(
   res: Response,
   code: number,
   message: string,
-  data: T | null = null
+  data: T | null = null,
 ): void {
   res.json({ code, message, data } as ApiResponse<T>)
 }
