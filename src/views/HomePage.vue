@@ -2,7 +2,11 @@
   <div class="home-page">
     <!-- Hero横幅 -->
     <HeroBanner />
-
+     <div class="home-header">
+      <h1>DevBlog</h1>
+      <p>一个开发者博客</p>
+      <SearchBar />
+    </div>
     <!-- 分类筛选栏 -->
     <div class="filter-bar">
       <button
@@ -71,7 +75,7 @@ import { onMounted } from 'vue'
 import { useArticleStore } from '@/stores/article'
 import HeroBanner from '@/components/common/HeroBanner.vue'
 import ArticleCard from '@/components/common/ArticleCard.vue'
-
+import SearchBar from '@/components/common/SearchBar.vue' // <--- 添加这行
 const articleStore = useArticleStore()
 
 // 初始化加载数据

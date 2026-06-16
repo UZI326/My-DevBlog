@@ -84,3 +84,16 @@ export interface AdminArticleItem {
   created_at: string
   updated_at: string
 }
+
+
+// 9.评论项
+export interface CommentItem {
+  id: number
+  content: string
+  article_id: number
+  user_id: number
+  username: string
+  nickname: string | null
+  avatar: string | null
+  created_at: string
+}

@@ -37,7 +37,7 @@ async function handleDelete(id: number) {
     await deleteArticleApi(id)
     fetchArticles()
   } catch (e: any) {
-    alert('删除失败：' + e.message)
+    toast.error('删除失败：' + e.message)
   }
 }
 

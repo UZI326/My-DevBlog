@@ -45,10 +45,17 @@
         <hr class="divider" />
 
         <!-- 点赞/评论 -->
-        <div class="article-actions">
-          <button class="action-btn">👍 点赞 ({{ article.like_count }})</button>
-          <button class="action-btn">💬 评论 (0)</button>
-        </div>
+         <div class="article-actions">
+        <button
+          :class="['action-btn', 'like-btn', { liked }]"
+          :disabled="likeLoading"
+          @click="handleLike"
+        >
+          {{ liked ? '❤️' : '🤍' }} {{ article?.like_count || 0 }}
+        </button>
+      </div>
+      <!-- 评论区 -->
+      <CommentList v-if="article" :article-id="article.id" />
 
         <!-- 返回首页 -->
         <button class="back-btn" @click="goBack">← 返回首页</button>
@@ -65,14 +72,51 @@ import 'highlight.js/styles/github-dark.css'
 import { getArticleDetailApi } from '@/api/article'
 import type { ArticleDetail } from '@/types/article'
 import { getFullImageUrl } from '@/utils/url'
-
+import CommentList from '@/components/article/CommentList.vue'
+import { toggleLikeApi, getLikeStatusApi } from '@/api/article'
+import { useAuthStore } from '@/stores/auth'
+import { useToast } from '@/stores/toast'
 
 const router = useRouter()
 const route = useRoute()
+const auth = useAuthStore()
+const toast = useToast()
+
+// 点赞
+const liked = ref(false)
+const likeLoading = ref(false)
+
 
 // 状态
 const article = ref<ArticleDetail | null>(null)
 const loading = ref(true)
+
+async function checkLikeStatus(){
+  if (!auth.isLoggedIn || !article.value) return
+  try {
+    const res = await getLikeStatusApi(article.value.id)
+    liked.value = res.liked
+  } catch { /* ignore */ }
+}
+
+async function handleLike() {
+  if (!auth.isLoggedIn) {
+    toast.info('请先登录后再点赞')
+    return
+  }
+  if (!article.value) return
+
+  likeLoading.value = true
+  try {
+    const res = await toggleLikeApi(article.value.id)
+    liked.value = res.liked
+    article.value.like_count += res.liked ? 1 : -1
+  } catch (e: any) {
+    toast.error(e.message || '操作失败')
+  } finally {
+    likeLoading.value = false
+  }
+}
 
 // 从路由参数获取文章ID
 const articleId = Number(route.params.id)
@@ -113,8 +157,9 @@ const loadArticleDetail = async () => {
   }
 }
 // 初始化加载
-onMounted(() => {
-  loadArticleDetail()
+onMounted(async () => {
+  await loadArticleDetail()
+  checkLikeStatus()
 })
 </script>
 
@@ -228,27 +273,60 @@ onMounted(() => {
 
 .article-body :deep(img) {
   max-width: 100%;
-  border-radius: 4px;
+  border-radius: 4px; 
 }
 
+/* 1. 操作区容器：改为 Flex 居中布局 */
 .article-actions {
   display: flex;
-  gap: 16px;
-  margin: 20px 0;
+  justify-content: center; /* 核心：水平居中 */
+  align-items: center;
+  margin: 3rem 0 2rem;     /* 增加上下间距，与评论区拉开距离 */
 }
 
-.action-btn {
-  padding: 8px 16px;
-  border-radius: 8px;
-  border: 1px solid #e0e0e0;
+/* 2. 点赞按钮样式：胶囊形状 + 交互反馈 */
+.like-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;                /* Emoji 和数字之间的间距 */
+  padding: 8px 24px;       /* 左右宽一点，更像胶囊 */
+  border: 1px solid #e5e7eb;
+  border-radius: 9999px;   /* 核心：圆角设为最大值形成胶囊状 */
   background: white;
+  color: #374151;
+  font-size: 1rem;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
-.action-btn:hover {
-  border-color: #667eea;
-  color: #667eea;
+/* 悬停效果 */
+.like-btn:hover:not(:disabled) {
+  border-color: #fca5a5;
+  color: #ef4444;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(239, 68, 68, 0.1);
+}
+
+/* 已点赞状态 (高亮) */
+.like-btn.liked {
+  border-color: #fca5a5;
+  background: #fef2f2;     /* 浅红背景 */
+  color: #ef4444;          /* 红色文字 */
+}
+
+/* 禁用状态 (加载中) */
+.like-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* 3. 评论区组件的顶部间距微调 */
+:deep(.comment-list) {
+  margin-top: 1rem;
 }
 
 .back-btn {
@@ -260,6 +338,9 @@ onMounted(() => {
   cursor: pointer;
   transition: all 0.2s ease;
   margin: 20px 0;
+  display: block;           /* 让返回按钮也独占一行居中 */
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .back-btn:hover {

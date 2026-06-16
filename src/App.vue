@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import AppHeader from '@/components/common/AppHeader.vue'
+import ToastContainer from './components/common/ToastContainer.vue';
 </script>
 
 <template>
   <div id="app">
     <AppHeader />
     <main class="main-content">
-      <router-view />
+    <router-view />
+    <ToastContainer/>
     </main>
   </div>
 </template>

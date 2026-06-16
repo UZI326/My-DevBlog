@@ -46,6 +46,22 @@ const routes = [
     ]
   },
   {
+    path:'/search',
+    name:'search',
+    component:()=>import('@/views/SearchResultPage.vue'),
+  },
+  {
+    path:'/user/:id?',  // :id? 可选 → 不传就是自己的主页
+    name:'user-profile',
+    component: () => import('@/views/UserProfilePage.vue'),
+    props: true,
+  },
+  {
+    path: '/profile/:id?', // :id? 代表参数可选
+    name: 'profile',
+    component: () => import('@/views/UserProfilePage.vue'),
+  },
+  {
     path: '/403',
     name: 'forbidden',
     component: () => import('@/views/ForbiddenPage.vue'),

@@ -96,16 +96,28 @@ const request = async <T = unknown, P = unknown>(
   return result as T  // 断言为 T，因为拦截器已经处理过了
 }
 
-// 5. 导出 API 方法（保留你的原有调用方式，完全兼容）
+// 5. 工具函数：过滤 undefined/null 参数，防止向后端传递无效字段
+function filterParams<T extends Record<string, unknown>>(obj: T): Partial<T> {
+  if (!obj || typeof obj !== 'object') return obj
+  const filtered: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(obj)) {
+    if (value !== undefined && value !== null) {
+      filtered[key] = value
+    }
+  }
+  return filtered as Partial<T>
+}
+
+// 6. 导出 API 方法（保留你的原有调用方式，完全兼容）
 export const api = {
   get: <T, P = unknown>(url: string, params?: P, config?: AxiosRequestConfig) =>
-    request<T, P>('get', url, undefined, params, config),
+    request<T, P>('get', url, undefined, filterParams(params as Record<string, unknown>) as P, config),
   post: <T, P = unknown>(url: string, data?: P, config?: AxiosRequestConfig) =>
-    request<T, P>('post', url, data, undefined, config),
+    request<T, P>('post', url, filterParams(data as Record<string, unknown>) as P, undefined, config),
   put: <T, P = unknown>(url: string, data?: P, config?: AxiosRequestConfig) =>
-    request<T, P>('put', url, data, undefined, config),
+    request<T, P>('put', url, filterParams(data as Record<string, unknown>) as P, undefined, config),
   delete: <T, P = unknown>(url: string, params?: P, config?: AxiosRequestConfig) =>
-    request<T, P>('delete', url, undefined, params, config),
+    request<T, P>('delete', url, undefined, filterParams(params as Record<string, unknown>) as P, config),
 }
 
 // export default instance

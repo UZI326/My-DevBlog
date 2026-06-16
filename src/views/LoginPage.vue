@@ -114,7 +114,7 @@ const handleLogin = async () => {
     
   } catch (error:any) {
     // 捕获错误并提示
-   alert(error.message||'登录失败,请重试')
+   toast.error(error.message||'登录失败,请重试')
   } finally {
     isLoading.value = false;
   }

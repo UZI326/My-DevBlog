@@ -7,11 +7,13 @@ import { getArticleDetailApi } from '@/api/article'
 import { getCategoriesApi } from '@/api/article'
 import { getTagsApi } from '@/api/admin'
 import { uploadImageApi } from '@/api/upload'
+import { useToast } from '@/stores/toast'
 import type { ArticleFormData } from '@/types/article'
 import type { Category, Tag } from '@/types/article'
 
 const route = useRoute()
 const router = useRouter()
+const toast = useToast()
 
 // 是否是编辑模式（有 :id 就是编辑）
 const editId = computed(() => {
@@ -85,7 +87,7 @@ async function handleImageUpload(e: Event) {
     // 把图片链接插入到编辑器内容末尾
     form.content += '\n![图片](' + result.url + ')'
   } catch (err: any) {
-    alert('图片上传失败：' + err.message)
+    toast.error('图片上传失败：' + err.message)
   } finally {
     uploading.value = false
   }
@@ -93,23 +95,28 @@ async function handleImageUpload(e: Event) {
 
 // 保存文章
 async function handleSave(publish: boolean) {
-  if (!form.title.trim()) { alert('请输入文章标题'); return }
-  if (!form.content.trim()) { alert('请输入文章内容'); return }
-  if (!form.category_id) { alert('请选择分类'); return }
+  // 【Bug2修复】入口守卫：防止快速双击重复提交
+  if (saving.value) return
+
+  if (!form.title.trim()) { toast.error('请输入文章标题'); return }
+  if (!form.content.trim()) { toast.error('请输入文章内容'); return }
+  if (!form.category_id) { toast.error('请选择分类'); return }
 
   form.is_published = publish ? 1 : 0
   saving.value = true
   try {
     if (isEdit.value) {
       await updateArticleApi(editId.value!, form)
-      alert('更新成功')
+      toast.success('更新成功')
     } else {
       await createArticleApi(form)
-      alert('发布成功')
+      toast.success('发布成功')
     }
+    // 【Bug1修复】延迟跳转，给Toast足够展示时间后再销毁组件
+    await new Promise(r => setTimeout(r, 600))
     router.push('/admin')
   } catch (err: any) {
-    alert('保存失败：' + err.message)
+    toast.error('保存失败：' + err.message)
   } finally {
     saving.value = false
   }

@@ -64,15 +64,37 @@ export const useArticleStore = defineStore('article', () => {
 
     } catch (error: any) {
       console.error(error)
-      alert(error.message || '获取文章列表失败')
+      toast.error(error.message || '获取文章列表失败')
     } finally {
       loading.value = false
     }
   }
 
-  // ... 其他函数 (fetchArticleDetail, fetchCategories) 保持不变 ...
-  const fetchArticleDetail = async (id: number) => { /*...*/ }
-  const fetchCategories = async () => { /*...*/ }
+  /**
+   * 获取文章详情
+   */
+  const fetchArticleDetail = async (id: number) => {
+    loading.value = true
+    try {
+      articleDetail.value = await getArticleDetailApi(id)
+    } catch (error: any) {
+      console.error(error)
+      throw error
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /**
+   * 获取全部分类列表
+   */
+  const fetchCategories = async () => {
+    try {
+      categories.value = await getCategoriesApi()
+    } catch (error: any) {
+      console.error(error)
+    }
+  }
 
 
   return {
