@@ -12,7 +12,7 @@ import userRoutes from './routes/user.js'
 import articlesRoutes from './routes/articles.js'
 import adminArticlesRoutes from './routes/adminArticles.js'
 import uploadRoutes from './routes/upload.js'
-
+import commentsRoutes from './routes/comments.js'
 const app = express()
 const port = parseInt(process.env.port || '3001')
 initDB()
@@ -31,7 +31,7 @@ app.use('/api/user',userRoutes)
 app.use('/api/articles',articlesRoutes)
 app.use('/api/admin/articles',adminArticlesRoutes)
 app.use('/api/upload',uploadRoutes)
-
+app.use('/api/comments',commentsRoutes) 
 //分类列表接口
 app.get('/api/categories',(_req,res)=>{
   const rows = db.prepare(`

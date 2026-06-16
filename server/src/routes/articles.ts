@@ -1,6 +1,8 @@
 import express from 'express'
 import db from '../db.js'
 import { sendResponse } from '../utils/response.js'
+import { parse } from 'node:path';
+import { authMiddleware } from '../middleware/auth.js';
 
 const router = express.Router()
 
@@ -101,6 +103,25 @@ router.get('/', (req, res) => {
   sendResponse(res, 0, '获取文章列表成功', { items: articlesWithTags, total, pagenum, pagesize })
 })
 
+// 全局搜索接口（必须放在 /:id 之前，否则 "search" 会被 :id 捕获）
+router.get('/search',(req,res)=>{
+  const q = (req.query.q as string || '').trim()
+  const pagenum = parseInt(req.query.pagenum as string) ||1
+  const pagesize = parseInt(req.query.pagesize as string) ||10
+  if(!q) return sendResponse(res,400,'请输入关键词')
+  const offset = (pagenum-1)*pagesize
+  const { total } = db.prepare('SELECT COUNT(*) as total FROM articles_fts WHERE articles_fts MATCH ?').get(q) as { total: number }
+   // ✅ 核心：FTS5 MATCH 语法 + ORDER BY rank 按相关度排序
+   const articles = db.prepare(`
+    SELECT a.*, u.username AS author_name, c.name AS category_name
+    FROM articles_fts fts JOIN articles a ON a.id = fts.rowid
+    LEFT JOIN users u ON a.author_id = u.id LEFT JOIN categories c ON a.category_id = c.id
+    WHERE a.is_published = 1 AND articles_fts MATCH ?
+    ORDER BY rank LIMIT ? OFFSET ?
+  `).all(q, pagesize, offset)
+    sendResponse(res, 0, 'success', { items: articles, total, pagenum, pagesize })
+})
+
 // 文章详情
 router.get('/:id', (req, res) => {
   const articleId = parseInt(req.params.id)
@@ -122,4 +143,32 @@ router.get('/:id', (req, res) => {
   sendResponse(res, 0, '获取文章详情成功', { ...article, tags })
 })
 
+// 点赞/取消点赞（Toggle模式）
+router.post('/:id/like', authMiddleware, (req, res) => {
+  const articleId = parseInt(req.params.id as string)
+  const article = db.prepare('SELECT id FROM articles WHERE id = ? AND is_published = 1').get(articleId)
+  if (!article) return sendResponse(res, 404, '文章不存在')
+
+  // 查是否已点赞
+  const existing = db.prepare('SELECT id FROM likes WHERE user_id = ? AND article_id = ?')
+    .get(req.user!.id, articleId)
+  if (existing) {
+    // 已点 → 取消
+    db.prepare('DELETE FROM likes WHERE id = ?').run((existing as any).id)
+    db.prepare('UPDATE articles SET like_count = like_count - 1 WHERE id = ?').run(articleId)
+    sendResponse(res, 0, '已取消点赞', { liked: false })
+  } else {
+    // 未点 → 点赞
+    db.prepare('INSERT INTO likes (user_id, article_id) VALUES (?, ?)').run(req.user!.id, articleId)
+    db.prepare('UPDATE articles SET like_count = like_count + 1 WHERE id = ?').run(articleId)
+    sendResponse(res, 0, '点赞成功', { liked: true })
+  }
+})
+//查询点赞状态
+router.get('/:id/like-status',authMiddleware,(req,res)=>{
+  const articleId = parseInt(req.params.id as string)
+  const existing = db.prepare('SELECT id FROM likes WHERE user_id = ? AND article_id = ?')
+    .get(req.user!.id, articleId)
+  sendResponse(res, 0, 'success', { liked: !!existing })
+})
 export default router

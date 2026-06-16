@@ -26,7 +26,8 @@ export function initDB():void{
       user_pic TEXT,
       nickname TEXT,
       role TEXT DEFAULT 'user',
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     -- 分类表
@@ -68,7 +69,66 @@ export function initDB():void{
       FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE,
       FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
     );
+    -- 评论表
+    CREATE TABLE IF NOT EXISTS comments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      content TEXT NOT NULL,
+      article_id INTEGER NOT NULL,  -- ⚠️ 关联文章ID
+      user_id INTEGER NOT NULL,     -- ⚠️ 关联用户ID
+      parent_id INTEGER DEFAULT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      -- ✅ 核心：级联删除 → 文章/用户删了，评论自动删
+      FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (parent_id) REFERENCES comments(id) ON DELETE CASCADE
+    );
+    -- 点赞表
+    CREATE TABLE IF NOT EXISTS likes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      article_id INTEGER NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      -- ✅ 核心：联合唯一约束 → 数据库层面防重复点赞
+      UNIQUE(user_id, article_id),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE
+    );
+    -- FTS5 虚拟表（全文搜索核心）
+    CREATE VIRTUAL TABLE IF NOT EXISTS articles_fts USING fts5(
+      title, content, summary,
+      content='articles',        -- 关联真实表
+      content_rowid='id'         -- 关联主键
+    );
+    
+    -- ✅ 3个触发器必须全写！少一个索引不同步
+    -- 新增文章时同步索引
+    CREATE TRIGGER IF NOT EXISTS articles_ai AFTER INSERT ON articles BEGIN
+      INSERT INTO articles_fts(rowid, title, content, summary)
+      VALUES (new.id, new.title, new.content, new.summary);
+    END;
+    -- 删除文章时同步索引
+    CREATE TRIGGER IF NOT EXISTS articles_ad AFTER DELETE ON articles BEGIN
+      INSERT INTO articles_fts(articles_fts, rowid, title, content, summary)
+      VALUES ('delete', old.id, old.title, old.content, old.summary);
+    END;
+    -- 更新文章时同步索引
+    CREATE TRIGGER IF NOT EXISTS articles_au AFTER UPDATE ON articles BEGIN
+      INSERT INTO articles_fts(articles_fts, rowid, title, content, summary)
+      VALUES ('delete', old.id, old.title, old.content, old.summary);
+      INSERT INTO articles_fts(rowid, title, content, summary)
+      VALUES (new.id, new.title, new.content, new.summary);
+    END;
   `)
+
+  // 【幂等升级】兼容旧数据库：补齐可能缺失的列
+  // SQLite 不支持 ALTER TABLE ... ADD COLUMN IF NOT EXISTS，
+  // 用 JS try-catch 捕获"列已存在"错误并静默忽略
+  try {
+    db.exec('ALTER TABLE users ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP')
+    console.log('✅ 数据库升级：users 表已添加 updated_at 列')
+  } catch {
+    // 列已存在 → 忽略
+  }
 }
 
 export default db
