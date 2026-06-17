@@ -1,13 +1,13 @@
 //实现注册逻辑
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+
 import { useAuthStore } from '@/stores/auth'
 import type { RegisterParams } from '@/types/user'
 
 //状态定义
 const authStore = useAuthStore()
-const router = useRouter()
+
 const loading = ref(false) //注册按钮加载态
 //表单数据
 const form = ref<{

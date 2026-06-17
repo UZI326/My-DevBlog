@@ -4,15 +4,16 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc && vite bulid",
+    "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
     "lint": "eslint src/",
     "type-check": "vue-tsc --noEmit"
   },
   "dependencies": {
+    "@types/marked": "^5.0.2",
     "axios": "^1.16.1",
     "highlight.js": "^11.11.1",
-    "marked": "^18.0.4",
+    "marked": "^18.0.5",
     "marked-highlight": "^2.2.4",
     "pinia": "2.2.6",
     "vue": "3.5.13",

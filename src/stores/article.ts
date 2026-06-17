@@ -2,7 +2,8 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { getArticlesApi, getArticleDetailApi, getCategoriesApi } from '@/api/article'
 import type { ArticleListItem, ArticleDetail, ArticleFilter, Category } from '@/types/article'
-
+import { useToast } from '@/stores/toast'
+const toast = useToast()
 export const useArticleStore = defineStore('article', () => {
   // === 状态 ===
   const articles = ref<ArticleListItem[]>([])

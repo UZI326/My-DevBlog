@@ -3,7 +3,8 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import type { AdminArticleItem } from '@/types/article'
 import { getAdminArticlesApi, deleteArticleApi } from '@/api/admin'
-
+import { useToast } from '@/stores/toast'
+const toast = useToast()
 const router = useRouter()
 
 const articles = ref<AdminArticleItem[]>([])

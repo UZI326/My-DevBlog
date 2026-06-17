@@ -25,7 +25,7 @@ export const useAuthStore = defineStore('auth', () => {
       id: data.id,
       username: data.username,
       user_pic: data.user_pic,
-      role: data.role || '' // 建议加上 role，防止 hasRoles 报错
+      role: (data as any).role || '' // 建议加上 role，防止 hasRoles 报错
     }as User
     localStorage.setItem('devblog_token', data.token)
     localStorage.setItem('devblog_user', JSON.stringify(user.value))

@@ -65,7 +65,8 @@
 import { ref, reactive } from 'vue';
 import { useAuthStore } from '@/stores/auth'
 import type { LoginParams } from '@/types/api';
-
+import { useToast } from '@/stores/toast'
+const toast = useToast()
 const authStore = useAuthStore()
 // 表单数据
 const form = reactive<LoginParams>({
