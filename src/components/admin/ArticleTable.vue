@@ -3,22 +3,27 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import type { AdminArticleItem } from '@/types/article'
 import { getAdminArticlesApi, deleteArticleApi } from '@/api/admin'
+import ErrorState from '@/components/common/ErrorState.vue'
 import { useToast } from '@/stores/toast'
 const toast = useToast()
 const router = useRouter()
 
 const articles = ref<AdminArticleItem[]>([])
 const loading = ref(false)
+const loadError = ref(false)
 const total = ref(0)
 const pagenum = ref(1)
 const pagesize = ref(10)
 
 async function fetchArticles() {
   loading.value = true
+  loadError.value = false
   try {
     const data = await getAdminArticlesApi({ pagenum: pagenum.value, pagesize: pagesize.value })
     articles.value = data.items
     total.value = data.total
+  } catch {
+    loadError.value = true
   } finally {
     loading.value = false
   }
@@ -70,6 +75,8 @@ onMounted(() => {
 <template>
   <div class="article-table-container">
     <div v-if="loading" class="table-loading">加载中...</div>
+
+    <ErrorState v-else-if="loadError" message="加载文章列表失败，请稍后重试" @retry="fetchArticles" />
 
     <div v-else-if="articles.length === 0" class="table-empty">
       <p>还没有文章</p>

@@ -40,6 +40,50 @@ const loading = ref(false)
 const categories = ref<Category[]>([])
 const tags = ref<Tag[]>([])
 
+// ========== 表单校验（NEW） ==========
+const errors = reactive({
+  title: '',
+  content: '',
+  category_id: '',
+})
+
+function validateForm(): boolean {
+  // 重置
+  errors.title = ''
+  errors.content = ''
+  errors.category_id = ''
+
+  let valid = true
+
+  if (!form.title.trim()) {
+    errors.title = '文章标题不能为空'
+    valid = false
+  } else if (form.title.length > 100) {
+    errors.title = '标题不能超过100个字符'
+    valid = false
+  }
+
+  if (!form.content.trim()) {
+    errors.content = '文章内容不能为空'
+    valid = false
+  }
+
+  if (!form.category_id) {
+    errors.category_id = '请选择分类'
+    valid = false
+  }
+
+  if (!valid) {
+    toast.warning('请填写必填项')
+  }
+  return valid
+}
+
+// 输入时清除对应字段的错误
+function clearError(field: keyof typeof errors) {
+  errors[field] = ''
+}
+
 // 页面初始化
 onMounted(async () => {
   // 并行加载分类和标签，用 allSettled 防止任一接口失败导致整页白屏
@@ -95,12 +139,11 @@ async function handleImageUpload(e: Event) {
 
 // 保存文章
 async function handleSave(publish: boolean) {
-  // 【Bug2修复】入口守卫：防止快速双击重复提交
+  // 防止快速双击重复提交
   if (saving.value) return
 
-  if (!form.title.trim()) { toast.error('请输入文章标题'); return }
-  if (!form.content.trim()) { toast.error('请输入文章内容'); return }
-  if (!form.category_id) { toast.error('请选择分类'); return }
+  // 【替换】原来三行 toast 校验 → 一行调用
+  if (!validateForm()) return
 
   form.is_published = publish ? 1 : 0
   saving.value = true
@@ -112,7 +155,7 @@ async function handleSave(publish: boolean) {
       await createArticleApi(form)
       toast.success('发布成功')
     }
-    // 【Bug1修复】延迟跳转，给Toast足够展示时间后再销毁组件
+    // 延迟跳转，给Toast足够展示时间
     await new Promise(r => setTimeout(r, 600))
     router.push('/admin')
   } catch (err: any) {
@@ -143,14 +186,16 @@ async function handleSave(publish: boolean) {
       <!-- 表单 -->
       <div class="editor-form">
         <!-- 标题 -->
-        <div class="form-group">
-          <label>文章标题</label>
+        <div class="form-group" :class="{ 'has-error': errors.title }">
+          <label>文章标题 <span class="required">*</span></label>
           <input
             v-model="form.title"
             type="text"
             class="input-title"
             placeholder="输入文章标题..."
+            @input="clearError('title')"
           />
+          <p v-if="errors.title" class="field-error">{{ errors.title }}</p>
         </div>
 
         <!-- 摘要 -->
@@ -178,13 +223,18 @@ async function handleSave(publish: boolean) {
           </div>
         </div>
 
-        <!-- 分类选择 -->
-        <div class="form-group">
-          <label>分类</label>
-          <select v-model.number="form.category_id" class="select-category">
+        <!-- 分类 -->
+        <div class="form-group" :class="{ 'has-error': errors.category_id }">
+          <label>分类 <span class="required">*</span></label>
+          <select
+            v-model.number="form.category_id"
+            class="select-category"
+            @change="clearError('category_id')"
+          >
             <option :value="null" disabled>请选择分类</option>
             <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
           </select>
+          <p v-if="errors.category_id" class="field-error">{{ errors.category_id }}</p>
         </div>
 
         <!-- 标签选择（多选） -->
@@ -201,15 +251,16 @@ async function handleSave(publish: boolean) {
         </div>
 
         <!-- Markdown 编辑器 -->
-        <div class="form-group">
+        <div class="form-group" :class="{ 'has-error': errors.content }">
           <div class="editor-label-row">
-            <label>文章内容（Markdown）</label>
+            <label>文章内容（Markdown） <span class="required">*</span></label>
             <label class="upload-btn">
               {{ uploading ? '上传中...' : '📎 上传图片' }}
               <input type="file" accept="image/*" hidden @change="handleImageUpload" />
             </label>
           </div>
-          <MarkdownEditor v-model="form.content" />
+          <MarkdownEditor v-model="form.content" @update:model-value="clearError('content')" />
+          <p v-if="errors.content" class="field-error">{{ errors.content }}</p>
         </div>
       </div>
     </template>
@@ -357,5 +408,23 @@ async function handleSave(publish: boolean) {
   padding: 0.3rem 0.6rem;
   border: 1px dashed #4299e1;
   border-radius: 4px;
+}
+
+/* ===== 表单校验样式 ===== */
+.required {
+  color: #e53e3e;
+  margin-left: 2px;
+}
+
+.has-error .input-title,
+.has-error .select-category,
+.has-error :deep(.markdown-editor) {
+  border-color: #e53e3e;
+}
+
+.field-error {
+  color: #e53e3e;
+  font-size: 0.8rem;
+  margin: 0.3rem 0 0;
 }
 </style>

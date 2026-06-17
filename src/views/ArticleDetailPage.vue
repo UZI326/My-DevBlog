@@ -4,6 +4,9 @@
       <!-- 加载态 -->
       <div class="loading" v-if="loading">加载中...</div>
 
+      <!-- 错误态 -->
+      <ErrorState v-else-if="loadError" message="加载文章失败，请稍后重试" @retry="loadArticleDetail" />
+
       <!-- 文章不存在 -->
       <div class="not-found" v-else-if="!article">
         <h2>文章未找到</h2>
@@ -73,6 +76,7 @@ import { getArticleDetailApi } from '@/api/article'
 import type { ArticleDetail } from '@/types/article'
 import { getFullImageUrl } from '@/utils/url'
 import CommentList from '@/components/article/CommentList.vue'
+import ErrorState from '@/components/common/ErrorState.vue'
 import { toggleLikeApi, getLikeStatusApi } from '@/api/article'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/stores/toast'
@@ -90,6 +94,7 @@ const likeLoading = ref(false)
 // 状态
 const article = ref<ArticleDetail | null>(null)
 const loading = ref(true)
+const loadError = ref(false)
 
 async function checkLikeStatus(){
   if (!auth.isLoggedIn || !article.value) return
@@ -142,16 +147,24 @@ const goBack = () => {
 // 加载文章详情
 const loadArticleDetail = async () => {
   loading.value = true
+  loadError.value = false
   try {
     const res = await getArticleDetailApi(articleId)
     if (res) {
       article.value = res
+      // ========== 动态设置页面标题 ==========
+      document.title = `${res.title} - DevBlog`
     } else {
       article.value = null
+       // 文章不存在时恢复默认标题（可选）
+      document.title = 'DevBlog'
     }
   } catch (error) {
     console.error('加载文章详情失败：', error)
     article.value = null
+    loadError.value = true
+     // 加载失败时恢复默认标题（可选）
+    document.title = 'DevBlog'
   } finally {
     loading.value = false
   }

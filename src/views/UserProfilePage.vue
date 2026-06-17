@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/stores/toast'
 import { getUserProfileApi, updateProfileApi } from '@/api/user'
+import ErrorState from '@/components/common/ErrorState.vue'
 
 const route = useRoute()
 const auth = useAuthStore()
@@ -30,6 +31,7 @@ const isOwner = computed(() => {
 // 用户数据
 const profile = ref<any>(null)
 const loading = ref(true)
+const loadError = ref(false)
 
 // 编辑模式
 const editing = ref(false) //是否处于编辑模式
@@ -39,12 +41,15 @@ const saving = ref(false)    //保存中状态 防止重复提交保存中...
 //加载用户资料函数 loadProfile
 async function loadProfile() {
   loading.value = true
+  loadError.value = false
   try {
     if (userId.value) {
       profile.value = await getUserProfileApi(userId.value)
     } else if (auth.user) {
       profile.value = await getUserProfileApi(auth.user.id)
     }
+  } catch {
+    loadError.value = true
   } finally {
     loading.value = false
   }
@@ -86,6 +91,7 @@ onMounted(loadProfile)
     <!-- 调试信息：验证 isOwner 计算是否正常 -->
 
     <div v-if="loading" class="loading">加载中...</div>
+    <ErrorState v-else-if="loadError" message="加载用户信息失败，请稍后重试" @retry="loadProfile" />
     <div v-else-if="!profile" class="empty">用户不存在</div>
 
     <template v-else>

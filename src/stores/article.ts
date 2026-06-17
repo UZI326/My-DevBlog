@@ -11,6 +11,7 @@ export const useArticleStore = defineStore('article', () => {
   const categories = ref<Category[]>([])
   const total = ref(0)
   const loading = ref(false)
+  const loadError = ref(false)
 
   // UI 交互状态
   const currentFilter = ref<string>('all')
@@ -45,6 +46,7 @@ export const useArticleStore = defineStore('article', () => {
    */
   const fetchArticles = async (params?: Partial<ArticleFilter>) => {
     loading.value = true
+    loadError.value = false
     try {
       // ✅ 修复点3：构建新的请求对象，而不是修改原 params，避免 TS 报错
       const requestParams: any = {
@@ -65,6 +67,7 @@ export const useArticleStore = defineStore('article', () => {
 
     } catch (error: any) {
       console.error(error)
+      loadError.value = true
       toast.error(error.message || '获取文章列表失败')
     } finally {
       loading.value = false
@@ -104,6 +107,7 @@ export const useArticleStore = defineStore('article', () => {
     categories,
     total,
     loading,
+    loadError,
     currentFilter,
     currentPage,
     pageSize,

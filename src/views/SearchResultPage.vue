@@ -4,26 +4,25 @@ import { useRoute } from 'vue-router'
 import { searchArticlesApi } from '@/api/article'
 import type { ArticleListItem } from '@/types/article'
 import ArticleCard from '@/components/common/ArticleCard.vue'
-
+import ErrorState from '@/components/common/ErrorState.vue'
 const route = useRoute()
 const articles = ref<ArticleListItem[]>([])
 const total = ref(0)
 const loading = ref(false)
 const pagenum = ref(1)
 const pagesize = 10
-
+const loadError = ref(false) // 新增错误状态
 async function loadResults() {
   const q = route.query.q as string
   if (!q) return
-
+  loadError.value = false   // ← 重置错误状态
   loading.value = true
   try {
     const res = await searchArticlesApi({ q, pagenum: pagenum.value, pagesize })
     articles.value = res.items
     total.value = res.total
   } catch (e: any) {
-    articles.value = []
-    total.value = 0
+    loadError.value = true   // ← 标记加载失败
   } finally {
     loading.value = false
   }
@@ -51,6 +50,7 @@ function changePage(page: number) {
     </div>
 
     <div v-if="loading" class="loading">搜索中...</div>
+    <ErrorState v-else-if="loadError" message="搜索失败，请稍后重试" @retry="loadResults" />
 
     <template v-else>
       <div v-if="articles.length === 0" class="empty">

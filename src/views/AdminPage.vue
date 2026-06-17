@@ -1,58 +1,66 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
-// 退出后台，返回前台首页
-const goBackToFront = () => {
-  // 可以在这里添加离开后台前的逻辑，比如保存草稿、断开特定连接等
+// 移动端侧边栏开关
+const sidebarOpen = ref(false)
+
+function closeSidebar() {
+  sidebarOpen.value = false
+}
+
+function goBackToFront() {
   router.push('/')
 }
 </script>
 
 <template>
   <div class="admin-layout">
-    <!-- 侧边导航 -->
-    <aside class="admin-sidebar">
+    <!-- ====== 手机端遮罩 ====== -->
+    <div
+      v-show="sidebarOpen"
+      class="sidebar-overlay"
+      @click="closeSidebar"
+    ></div>
+
+    <!-- ====== 侧边导航 ====== -->
+    <aside :class="['admin-sidebar', { open: sidebarOpen }]">
       <div class="sidebar-title">后台管理</div>
       <nav class="sidebar-nav">
-        <!-- 
-          修复点 1：同时指定 active-class 和 exact-active-class
-          当路径是 /admin 时，添加 exact-active (高亮)
-          当路径是 /admin/xxx 时，添加普通的 active (这里我们设为空字符串，防止父菜单被错误高亮)
-        -->
-        <router-link 
-          to="/admin" 
-          active-class="" 
-          exact-active-class="active" 
+        <router-link
+          to="/admin"
+          active-class=""
+          exact-active-class="active"
           class="nav-item"
+          @click="closeSidebar"
         >
           📄 文章管理
         </router-link>
-
-        <!-- 
-          写文章/编辑文章：只要是 /admin/edit 开头的路径都高亮 
-        -->
-        <router-link 
-          to="/admin/edit" 
-          active-class="active" 
+        <router-link
+          to="/admin/edit"
+          active-class="active"
           class="nav-item"
+          @click="closeSidebar"
         >
           ✏️ 写文章
         </router-link>
       </nav>
-
       <div class="sidebar-footer">
-        <!-- 修复点 2：改用普通标签 + 编程式导航，语义更清晰 -->
         <a href="javascript:void(0)" class="back-link" @click="goBackToFront">
           ← 返回前台
         </a>
       </div>
     </aside>
 
-    <!-- 主内容区 -->
+    <!-- ====== 主内容区 ====== -->
     <main class="admin-content">
-      <!-- 添加过渡动画，让后台页面切换更丝滑（可选） -->
+      <!-- 汉堡按钮（仅手机端显示） -->
+      <button class="hamburger-btn" @click="sidebarOpen = !sidebarOpen">
+        {{ sidebarOpen ? '✕' : '☰' }}
+      </button>
+
       <router-view v-slot="{ Component }">
         <transition name="fade" mode="out-in">
           <component :is="Component" />
@@ -63,10 +71,10 @@ const goBackToFront = () => {
 </template>
 
 <style scoped>
-/* ... 你原来的 CSS 保持不变 ... */
+/* ===== PC 端：侧边栏常驻 ===== */
 .admin-layout {
   display: flex;
-  min-height: calc(100vh - 60px); /* 假设顶部有 60px 的 Header */
+  min-height: calc(100vh - 60px);
 }
 
 .admin-sidebar {
@@ -76,6 +84,8 @@ const goBackToFront = () => {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+  transition: transform 0.25s ease;
+  z-index: 100;
 }
 
 .sidebar-title {
@@ -118,19 +128,37 @@ const goBackToFront = () => {
   color: #a0aec0;
   text-decoration: none;
   font-size: 0.85rem;
-  cursor: pointer; /* 增加鼠标手型 */
+  cursor: pointer;
 }
 
 .back-link:hover { color: white; }
 
+/* ===== 汉堡按钮（默认隐藏） ===== */
+.hamburger-btn {
+  display: none;
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 200;
+  width: 38px;
+  height: 38px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* ===== 内容区 ===== */
 .admin-content {
   flex: 1;
   background: #f7fafc;
   overflow-y: auto;
-  padding: 20px; /* 建议给主内容区加个内边距 */
+  padding: 20px;
 }
 
-/* 新增：简单的页面切换淡入淡出动画 */
+/* ===== 淡入淡出 ===== */
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.2s ease;
@@ -138,5 +166,50 @@ const goBackToFront = () => {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+/* ========================================
+   手机端（≤768px）
+   ======================================== */
+@media (max-width: 768px) {
+  .admin-layout {
+    flex-direction: column;
+  }
+
+  /* 侧边栏：固定在左侧，默认滑出屏幕 */
+  .admin-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 240px;
+    transform: translateX(-100%);
+  }
+
+  .admin-sidebar.open {
+    transform: translateX(0);
+  }
+
+  /* 遮罩层 */
+  .sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 99;
+  }
+
+  /* 汉堡按钮：显示 */
+  .hamburger-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* 内容区：占满屏幕，去掉固定 padding */
+  .admin-content {
+    padding: 12px;
+    padding-top: 56px; /* 给汉堡按钮留空间 */
+    min-height: 100vh;
+  }
 }
 </style>

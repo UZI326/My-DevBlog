@@ -32,6 +32,9 @@
       <!-- 加载态 -->
       <div class="loading" v-if="articleStore.loading">加载中...</div>
 
+      <!-- 错误态 -->
+      <ErrorState v-else-if="articleStore.loadError" message="加载文章失败，请稍后重试" @retry="articleStore.fetchArticles()" />
+
       <!-- 空状态 -->
       <div class="empty" v-else-if="articleStore.articles.length === 0">
         暂无文章
@@ -76,6 +79,7 @@ import { useArticleStore } from '@/stores/article'
 import HeroBanner from '@/components/common/HeroBanner.vue'
 import ArticleCard from '@/components/common/ArticleCard.vue'
 import SearchBar from '@/components/common/SearchBar.vue' // <--- 添加这行
+import ErrorState from '@/components/common/ErrorState.vue'
 const articleStore = useArticleStore()
 
 // 初始化加载数据
